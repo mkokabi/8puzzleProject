@@ -1,0 +1,178 @@
+
+import java.util.Iterator;
+import sun.reflect.generics.reflectiveObjects.NotImplementedException;
+
+/*
+ * To change this license header, choose License Headers in Project Properties.
+ * To change this template file, choose Tools | Templates
+ * and open the template in the editor.
+ */
+/**
+ *
+ * @author Mohsen
+ */
+public class Board {
+
+    private class block {
+
+        public int row, col;
+
+        public block(int row, int col) {
+            this.row = row;
+            this.col = col;
+        }
+
+        public String toString() {
+            return String.format("row:%d, col:%d", this.row, this.col);
+        }
+    }
+
+    private int[][] blocks;
+    private block[] goal;
+    private int N;
+    private int emptyRow;
+    private int emptyCol;
+
+    // construct a board from an N-by-N array of blocks
+    // (where blocks[i][j] = block in row i, column j)
+    public Board(int[][] blocks) {
+        N = blocks.length;
+        this.blocks = new int[N][N];
+        this.goal = new block[N * N + 1];
+        this.goal[0] = new block(N - 1, N - 1);
+        int k = 0;
+        for (int i = 0; i < N; i++) {
+            for (int j = 0; j < N; j++) {
+                this.blocks[i][j] = blocks[i][j];
+                this.goal[++k] = new block(i, j);
+                if (blocks[i][j] == 0) {
+                    emptyRow = i;
+                    emptyCol = j;
+                }
+            }
+        }
+    }
+
+    private int pos(int i, int j) {
+        return ((i - 1) * N) + (j - 1);
+    }
+
+    // board dimension N
+    public int dimension() {
+        return N;
+    }
+
+    // number of blocks out of place
+    public int hamming() {
+        int result = 0;
+        int k = 1;
+        for (int i = 0; i < N; i++) {
+            for (int j = 0; j < N; j++) {
+                if (blocks[i][j] != k++) {
+                    result++;
+                }
+            }
+        }
+        return result;
+    }
+
+    private int distance(int curValue, int curRow, int curCol) {
+        return Math.abs(goal[curValue].row - curRow)
+                + Math.abs(goal[curValue].col - curCol);
+    }
+
+    // sum of Manhattan distances between blocks and goal
+    public int manhattan() {
+        int result = 0;
+        for (int i = 0; i < N; i++) {
+            for (int j = 0; j < N; j++) {
+                result += distance(blocks[i][j], i, j);
+            }
+        }
+        return result;
+    }
+
+    // is this board the goal board?
+    public boolean isGoal() {
+        int totalDist = 0;
+        int k = 0;
+        for (int i = 0; i < N; i++) {
+            for (int j = 0; j < N; j++) {
+                totalDist += distance(k++, i, j);
+            }
+        }
+        return totalDist == 0;
+    }
+
+    // a board obtained by exchanging two adjacent blocks in the same row
+    public Board twin() {
+        return new Board(null);
+    }
+
+    // does this board equal y?
+    public boolean equals(Object y) {
+        Board that = (Board) y;
+        for (int i = 0; i < N; i++) {
+            for (int j = 0; j < N; j++) {
+                if (that.blocks[i][j] != this.blocks[i][j]) {
+                    return false;
+                }
+            }
+        }
+        return true;
+    }
+
+    private void swap(int[][] bs, int r1, int c1, int r2, int c2) {
+        int tmp = bs[r1][c1];
+        bs[r1][c1] = bs[r2][c2];
+        bs[r2][c2] = tmp;
+    }
+
+    // all neighboring boards
+    public Iterable<Board> neighbors() {
+        return new Iterable<Board>() {
+
+            @Override
+            public Iterator<Board> iterator() {
+                Queue<Board> neighbs = new Queue<Board>();
+                if (emptyRow > 0) {
+                    Board board = new Board(blocks);
+                    swap(board.blocks, emptyRow, emptyCol, emptyRow - 1, emptyCol);
+                    neighbs.enqueue(board);
+                }
+                if (emptyRow < N - 1) {
+                    Board board = new Board(blocks);
+                    swap(board.blocks, emptyRow, emptyCol, emptyRow + 1, emptyCol);
+                    neighbs.enqueue(board);
+                }
+                if (emptyCol > 0) {
+                    Board board = new Board(blocks);
+                    swap(board.blocks, emptyRow, emptyCol, emptyRow, emptyCol - 1);
+                    neighbs.enqueue(board);
+                }
+                if (emptyCol < N - 1) {
+                    Board board = new Board(blocks);
+                    swap(board.blocks, emptyRow, emptyCol, emptyRow, emptyCol + 1);
+                    neighbs.enqueue(board);
+                }
+                return neighbs.iterator();
+            }
+        };
+    }
+
+    // string representation of the board (in the output format specified below)
+    public String toString() {
+        StringBuilder sb = new StringBuilder();
+        for (int i = 0; i < N; i++) {
+            for (int j = 0; j < N; j++) {
+                sb.append(this.blocks[i][j]);
+                if (j != N - 1) {
+                    sb.append(" ");
+                } else {
+                    sb.append("\n");
+                }
+            }
+        }
+        return sb.toString();
+    }
+}
