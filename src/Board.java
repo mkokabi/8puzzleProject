@@ -110,7 +110,7 @@ public class Board {
         if (N == 2 && board.emptyRow == 0) {
             r1 = 1;
         } else {
-            if (c2 < N - 1) {
+            if (board.emptyRow == 0 && c2 < N - 1) {
                 while (board.emptyCol == c1 || board.emptyCol == c2) {
                     c1++;
                     c2 = c1 + 1;

@@ -26,7 +26,7 @@ public class Solver {
         }
     }
 
-    private MaxPQ<Node> pq = new MaxPQ<Node>(new Comparator<Node>() {
+    private MinPQ<Node> pq = new MinPQ<Node>(new Comparator<Node>() {
         @Override
         public int compare(Node n1, Node n2) {
             int priority1 = n1.Board.hamming() + n1.Moves;
@@ -34,7 +34,7 @@ public class Solver {
             return Integer.compare(priority1, priority2);
         }
     });
-    
+
     private int m;
 
     // find a solution to the initial board (using the A* algorithm)
@@ -43,19 +43,22 @@ public class Solver {
         Node initialNode = new Node(null, initial, 0);
         pq.insert(initialNode);
         Board newState = initial;
-        while (!newState.isGoal()) {
+        if (!newState.isGoal()) {
             insertNeighbsInPQ(newState, initialNode);
             if (foundSolution) {
                 return;
             }
+        } else {
+            foundSolution = true;
+            solutionResult = new Queue<Board>();
         }
     }
 
-    private Stack<Board> solutionResult;
+    private Queue<Board> solutionResult;
     private boolean foundSolution = false;
 
     private void insertNeighbsInPQ(Board newState, Node prevNode) {
-        //pq.delMax();
+        //pq.delMin();
         m++;
         //System.out.format("moves:%d \n", m);
         //System.out.println("from \n" + prevNode.Board.toString());
@@ -69,14 +72,14 @@ public class Solver {
             }
             if (neighBoard.isGoal()) {
                 foundSolution = true;
-                solutionResult = new Stack<>();
-                solutionResult.push(neighBoard);
+                solutionResult = new Queue<>();
                 Iterator<Node> nodes = pq.iterator();
                 while (nodes.hasNext()) {
                     Node pn = nodes.next();
-                    solutionResult.push(pn.Board);
+                    solutionResult.enqueue(pn.Board);
                     pn = pn.PrevNode;
                 }
+                solutionResult.enqueue(neighBoard);
                 return;
             }
             if (prevNode.PrevNode != null && neighBoard.equals(prevNode.PrevNode.Board)) {
@@ -100,7 +103,7 @@ public class Solver {
 
     // min number of moves to solve initial board; -1 if no solution
     public int moves() {
-        return m;
+        return foundSolution ? m : -1;
     }
 
     // sequence of boards in a shortest solution; null if no solution
@@ -132,10 +135,9 @@ public class Solver {
         StdOut.print(initial);
         StdOut.println(initial.hamming());
         StdOut.println(initial.manhattan());
-        
+
         //StdOut.println(initial.twin());
         //Solver solver = new Solver(initial.twin());
-
         // solve the puzzle
         Solver solver = new Solver(initial);
 
