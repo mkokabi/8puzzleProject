@@ -65,10 +65,9 @@ public class Board {
     // number of blocks out of place
     public int hamming() {
         int result = 0;
-        int k = 1;
         for (int i = 0; i < N; i++) {
             for (int j = 0; j < N; j++) {
-                if (blocks[i][j] != k++) {
+                if (distance(blocks[i][j], i, j) != 0) {
                     result++;
                 }
             }
@@ -94,14 +93,7 @@ public class Board {
 
     // is this board the goal board?
     public boolean isGoal() {
-        int totalDist = 0;
-        int k = 0;
-        for (int i = 0; i < N; i++) {
-            for (int j = 0; j < N; j++) {
-                totalDist += distance(k++, i, j);
-            }
-        }
-        return totalDist == 0;
+        return hamming() == 0;
     }
 
     // a board obtained by exchanging two adjacent blocks in the same row
@@ -122,10 +114,12 @@ public class Board {
         return true;
     }
 
-    private void swap(int[][] bs, int r1, int c1, int r2, int c2) {
-        int tmp = bs[r1][c1];
-        bs[r1][c1] = bs[r2][c2];
-        bs[r2][c2] = tmp;
+    private void slide(Board board, int r1, int c1, int r2, int c2) {
+        int tmp = board.blocks[r1][c1];
+        board.blocks[r1][c1] = board.blocks[r2][c2];
+        board.blocks[r2][c2] = tmp;
+        board.emptyRow = r2;
+        board.emptyCol = c2;
     }
 
     // all neighboring boards
@@ -137,22 +131,22 @@ public class Board {
                 Queue<Board> neighbs = new Queue<Board>();
                 if (emptyRow > 0) {
                     Board board = new Board(blocks);
-                    swap(board.blocks, emptyRow, emptyCol, emptyRow - 1, emptyCol);
+                    slide(board, emptyRow, emptyCol, emptyRow - 1, emptyCol);
                     neighbs.enqueue(board);
                 }
                 if (emptyRow < N - 1) {
                     Board board = new Board(blocks);
-                    swap(board.blocks, emptyRow, emptyCol, emptyRow + 1, emptyCol);
+                    slide(board, emptyRow, emptyCol, emptyRow + 1, emptyCol);
                     neighbs.enqueue(board);
                 }
                 if (emptyCol > 0) {
                     Board board = new Board(blocks);
-                    swap(board.blocks, emptyRow, emptyCol, emptyRow, emptyCol - 1);
+                    slide(board, emptyRow, emptyCol, emptyRow, emptyCol - 1);
                     neighbs.enqueue(board);
                 }
                 if (emptyCol < N - 1) {
                     Board board = new Board(blocks);
-                    swap(board.blocks, emptyRow, emptyCol, emptyRow, emptyCol + 1);
+                    slide(board, emptyRow, emptyCol, emptyRow, emptyCol + 1);
                     neighbs.enqueue(board);
                 }
                 return neighbs.iterator();

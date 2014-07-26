@@ -1,5 +1,6 @@
 
 import java.util.Comparator;
+import java.util.Iterator;
 import sun.reflect.generics.reflectiveObjects.NotImplementedException;
 
 /*
@@ -26,7 +27,7 @@ public class Solver {
         }
     }
 
-    private MinPQ<Node> pq = new MinPQ<Node>(new Comparator<Node>() {
+    private MaxPQ<Node> pq = new MaxPQ<Node>(new Comparator<Node>() {
         @Override
         public int compare(Node n1, Node n2) {
             int priority1 = n1.Board.hamming() + n1.Moves;
@@ -34,52 +35,87 @@ public class Solver {
             return Integer.compare(priority1, priority2);
         }
     });
+    
+    private int m;
 
     // find a solution to the initial board (using the A* algorithm)
     public Solver(Board initial) {
+        //System.out.println("--Solving--");
         Node initialNode = new Node(null, initial, 0);
         pq.insert(initialNode);
         Board newState = initial;
-        int i = 0;
         while (!newState.isGoal()) {
-            insertNeighbsInPQ(newState, initialNode, i);
-        }
-    }
-
-    private boolean foundSolution = false;
-    
-    private void insertNeighbsInPQ(Board newState, Node prevNode, int i) {
-        pq.delMin();
-        for (Board neighBoard : newState.neighbors()) {
+            insertNeighbsInPQ(newState, initialNode);
             if (foundSolution) {
                 return;
             }
-            if (neighBoard.isGoal()){
+        }
+    }
+
+    private Stack<Board> solutionResult;
+    private boolean foundSolution = false;
+
+    private void insertNeighbsInPQ(Board newState, Node prevNode) {
+        //pq.delMax();
+        m++;
+        //System.out.format("moves:%d \n", m);
+        //System.out.println("from \n" + prevNode.Board.toString());
+        int n = 0;
+        for (Board neighBoard : newState.neighbors()) {
+            //System.out.println("n:" + n++);
+            //System.out.print(neighBoard.toString());
+            //System.out.format("manhattan:%d hamming:%d \n", neighBoard.manhattan(), neighBoard.hamming());
+            if (foundSolution) {
+                return;
+            }
+            if (neighBoard.isGoal()) {
                 foundSolution = true;
+                solutionResult = new Stack<>();
+                solutionResult.push(neighBoard);
+                Iterator<Node> nodes = pq.iterator();
+                while (nodes.hasNext()) {
+                    Node pn = nodes.next();
+                    solutionResult.push(pn.Board);
+                    pn = pn.PrevNode;
+                }
                 return;
             }
-            if (neighBoard.equals(prevNode.Board)) {
-                return;
+            if (prevNode.PrevNode != null && neighBoard.equals(prevNode.PrevNode.Board)) {
+                //System.out.format("return, moves:%d\n", m);
+                continue;
             }
-            final Node newNode = new Node(prevNode, neighBoard, ++i);
+            if (neighBoard.hamming() >= prevNode.Board.hamming()
+                    && neighBoard.manhattan() >= prevNode.Board.manhattan()) {
+                continue;
+            }
+            final Node newNode = new Node(prevNode, neighBoard, m);
             pq.insert(newNode);
-            insertNeighbsInPQ(neighBoard, newNode, i);
+            insertNeighbsInPQ(neighBoard, newNode);
         }
     }
 
     // is the initial board solvable?
     public boolean isSolvable() {
-        return true;
+        return foundSolution;
     }
 
     // min number of moves to solve initial board; -1 if no solution
     public int moves() {
-        return 0;
+        return m;
     }
 
     // sequence of boards in a shortest solution; null if no solution
     public Iterable<Board> solution() {
-        throw new NotImplementedException();
+        if (!foundSolution) {
+            return null;
+        }
+        return new Iterable<Board>() {
+
+            @Override
+            public Iterator<Board> iterator() {
+                return solutionResult.iterator();
+            }
+        };
     }
 
     // solve a slider puzzle (given below)
