@@ -29,8 +29,8 @@ public class Solver {
     private MinPQ<Node> pq = new MinPQ<Node>(new Comparator<Node>() {
         @Override
         public int compare(Node n1, Node n2) {
-            int priority1 = n1.Board.hamming() + n1.Moves;
-            int priority2 = n1.Board.hamming() + n2.Moves;
+            int priority1 = n1.Board.manhattan() + n1.Moves;
+            int priority2 = n1.Board.manhattan() + n2.Moves;
             return Integer.compare(priority1, priority2);
         }
     });
@@ -50,48 +50,54 @@ public class Solver {
             }
         } else {
             foundSolution = true;
-            solutionResult = new Queue<Board>();
+            solutionResult = new Stack<Board>();
         }
     }
 
-    private Queue<Board> solutionResult;
+    private Stack<Board> solutionResult;
     private boolean foundSolution = false;
 
     private void insertNeighbsInPQ(Board newState, Node prevNode) {
-        //pq.delMin();
+        pq.delMin();
         m++;
-        //System.out.format("moves:%d \n", m);
-        //System.out.println("from \n" + prevNode.Board.toString());
+        System.out.format("moves:%d \n", m);
+        System.out.println("from \n" + prevNode.Board.toString());
         int n = 0;
         for (Board neighBoard : newState.neighbors()) {
-            //System.out.println("n:" + n++);
-            //System.out.print(neighBoard.toString());
-            //System.out.format("manhattan:%d hamming:%d \n", neighBoard.manhattan(), neighBoard.hamming());
+            System.out.println("n:" + n++);
+            System.out.print(neighBoard.toString());
+            System.out.format("manhattan:%d hamming:%d \n", neighBoard.manhattan(), neighBoard.hamming());
             if (foundSolution) {
                 return;
             }
             if (neighBoard.isGoal()) {
                 foundSolution = true;
-                solutionResult = new Queue<>();
-                Iterator<Node> nodes = pq.iterator();
-                while (nodes.hasNext()) {
-                    Node pn = nodes.next();
-                    solutionResult.enqueue(pn.Board);
+                solutionResult = new Stack<>();
+                solutionResult.push(neighBoard);
+                Node pn = prevNode;
+                while (pn != null) {
+                    solutionResult.push(pn.Board);
                     pn = pn.PrevNode;
                 }
-                solutionResult.enqueue(neighBoard);
+//                Iterator<Node> nodes = pq.iterator();
+//                while (nodes.hasNext()) {
+//                    Node pn = nodes.next();
+//                    solutionResult.enqueue(pn.Board);
+//                    pn = pn.PrevNode;
+//                }
                 return;
             }
             if (prevNode.PrevNode != null && neighBoard.equals(prevNode.PrevNode.Board)) {
-                //System.out.format("return, moves:%d\n", m);
-                continue;
-            }
-            if (neighBoard.hamming() >= prevNode.Board.hamming()
-                    && neighBoard.manhattan() >= prevNode.Board.manhattan()) {
+                System.out.format("return, moves:%d\n", m);
                 continue;
             }
             final Node newNode = new Node(prevNode, neighBoard, m);
             pq.insert(newNode);
+            if (neighBoard.hamming() >= prevNode.Board.hamming()
+                    && neighBoard.manhattan() >= prevNode.Board.manhattan()) {
+                System.out.format("continue\n", m);
+                continue;
+            }
             insertNeighbsInPQ(neighBoard, newNode);
         }
     }
