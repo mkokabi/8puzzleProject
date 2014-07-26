@@ -1,6 +1,5 @@
 
 import java.util.Iterator;
-import sun.reflect.generics.reflectiveObjects.NotImplementedException;
 
 /*
  * To change this license header, choose License Headers in Project Properties.
@@ -67,6 +66,9 @@ public class Board {
         int result = 0;
         for (int i = 0; i < N; i++) {
             for (int j = 0; j < N; j++) {
+                if (blocks[i][j] == 0) {
+                    continue;
+                }
                 if (distance(blocks[i][j], i, j) != 0) {
                     result++;
                 }
@@ -85,6 +87,9 @@ public class Board {
         int result = 0;
         for (int i = 0; i < N; i++) {
             for (int j = 0; j < N; j++) {
+                if (blocks[i][j] == 0) {
+                    continue;
+                }
                 result += distance(blocks[i][j], i, j);
             }
         }
@@ -98,12 +103,43 @@ public class Board {
 
     // a board obtained by exchanging two adjacent blocks in the same row
     public Board twin() {
-        return new Board(null);
+        Board board = new Board(this.blocks);
+        int r1 = 0;
+        int c1 = 0;
+        int c2 = c1 + 1;
+        if (N == 2 && board.emptyRow == 0) {
+            r1 = 1;
+        } else {
+            if (c2 < N - 1) {
+                while (board.emptyCol == c1 || board.emptyCol == c2) {
+                    c1++;
+                    c2 = c1 + 1;
+                }
+            }
+            if (c2 == N && r1 < N) {
+                r1++;
+                c1 = 0;
+                c2 = c1 + 1;
+            }
+        }
+        int tmp = board.blocks[r1][c1];
+        board.blocks[r1][c1] = board.blocks[r1][c2];
+        board.blocks[r1][c2] = tmp;
+        return board;
     }
 
     // does this board equal y?
     public boolean equals(Object y) {
+        if (y == null) {
+            return false;
+        }
+        if (y.getClass() != this.getClass()) {
+            return false;
+        }
         Board that = (Board) y;
+        if (that.dimension() != this.dimension()) {
+            return false;
+        }
         for (int i = 0; i < N; i++) {
             for (int j = 0; j < N; j++) {
                 if (that.blocks[i][j] != this.blocks[i][j]) {
@@ -157,11 +193,15 @@ public class Board {
     // string representation of the board (in the output format specified below)
     public String toString() {
         StringBuilder sb = new StringBuilder();
+        sb.append("\n");
+        sb.append(dimension());
+        sb.append("\n");
         for (int i = 0; i < N; i++) {
+            sb.append(" ");
             for (int j = 0; j < N; j++) {
                 sb.append(this.blocks[i][j]);
                 if (j != N - 1) {
-                    sb.append(" ");
+                    sb.append("  ");
                 } else {
                     sb.append("\n");
                 }

@@ -1,7 +1,6 @@
 
 import java.util.Comparator;
 import java.util.Iterator;
-import sun.reflect.generics.reflectiveObjects.NotImplementedException;
 
 /*
  * To change this license header, choose License Headers in Project Properties.
@@ -133,6 +132,9 @@ public class Solver {
         StdOut.print(initial);
         StdOut.println(initial.hamming());
         StdOut.println(initial.manhattan());
+        
+        //StdOut.println(initial.twin());
+        //Solver solver = new Solver(initial.twin());
 
         // solve the puzzle
         Solver solver = new Solver(initial);
