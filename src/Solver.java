@@ -1,6 +1,8 @@
 
 import java.util.Comparator;
 import java.util.Iterator;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /*
  * To change this license header, choose License Headers in Project Properties.
@@ -38,15 +40,51 @@ public class Solver {
 
     private int m;
 
+    private class TestThread extends Thread {
+
+        Board board;
+        Solver mainSolver;
+
+        public TestThread(Board board, Solver mainSolver) {
+            this.board = board;
+            this.mainSolver = mainSolver;
+        }
+
+        @Override
+        public void run() {
+            Solver solver = new Solver(this.board, true, mainSolver);
+            isTwinSolvable = solver.isSolvable();
+            if (isTwinSolvable) {
+                mainSolver.isTwinSolvable = true;
+            }
+        }
+    }
+
+    private boolean isTwinSolvable = false;
+
     // find a solution to the initial board (using the A* algorithm)
     public Solver(Board initial) {
+        this(initial, false, null);
+    }
+    
+    private TestThread feasibleTestThread;
+    private Solver mainSolver;
+
+    private Solver(Board initial, boolean isTwin, Solver mainSolver) {
         //System.out.println("--Solving--");
         Node initialNode = new Node(null, initial, 0);
+        if (!isTwin) {
+            Board twinBoard = initialNode.Board.twin();
+            feasibleTestThread = new TestThread(twinBoard, this);
+            feasibleTestThread.start();
+        } else {
+            this.mainSolver = mainSolver;
+        }
         //pq.insert(initialNode);
         Board newState = initial;
         if (!newState.isGoal()) {
             //insertNeighbsInPQ(newState, initialNode);
-            insertNeighbsInPQ(initialNode);
+            insertNeighbsInPQ(initialNode, isTwin);
             if (foundSolution) {
                 return;
             }
@@ -60,12 +98,18 @@ public class Solver {
     private boolean foundSolution = false;
 
 //    private void insertNeighbsInPQ(Board newState, Node prevNode) {
-    private void insertNeighbsInPQ(Node curNode) {
+    private void insertNeighbsInPQ(Node curNode, boolean isTwin) {
+        if (!isTwin && isTwinSolvable) {
+            return;
+        }
+        if (isTwin && mainSolver.foundSolution) {
+            return;
+        }
         //pq = pq = new MinPQ<Node>(MinPQComparator);
         m++;
-        System.out.format("--------------moves:%d \n", m);
-        //System.out.println("from \n" + prevNode.Board.toString());
-        System.out.println("from \n" + curNode.Board.toString());
+//        System.out.format("--------------moves:%d \n", m);
+//        //System.out.println("from \n" + prevNode.Board.toString());
+//        System.out.println("from \n" + curNode.Board.toString());
         int n = 0;
         //for (Board neighBoard : newState.neighbors()) {
         //Node minNode = pq.isEmpty() ? curNode : pq.min();
@@ -75,13 +119,13 @@ public class Solver {
         while (true) {
             for (Board neighBoard : minNode.Board.neighbors()) {
                 //for (Board neighBoard : curNode.Board.neighbors()) {
-                System.out.println("n:" + n++);
-                System.out.print(neighBoard.toString());
-                System.out.format("manhattan:%d hamming:%d \n", neighBoard.manhattan(), neighBoard.hamming());
+//                System.out.println("n:" + n++);
+//                System.out.print(neighBoard.toString());
+//                System.out.format("manhattan:%d hamming:%d \n", neighBoard.manhattan(), neighBoard.hamming());
                 if (foundSolution) {
                     return;
                 }
-                if (neighBoard.isGoal()) {
+                if (neighBoard.isGoal()) {                    
                     foundSolution = true;
                     solutionResult = new Stack<>();
                     solutionResult.push(neighBoard);
@@ -95,7 +139,7 @@ public class Solver {
                 }
                 if (minNode.PrevNode != null && neighBoard.equals(minNode.PrevNode.Board)) {
                     //if (prevNode.PrevNode != null && neighBoard.equals(prevNode.PrevNode.Board)) {
-                    System.out.format("return, moves:%d\n", m);
+//                    System.out.format("return, moves:%d\n", m);
                     continue;
                 }
                 final Node newNode = new Node(minNode, neighBoard, m);
@@ -117,7 +161,7 @@ public class Solver {
                     if (node.equals(minNode)) {
                         found = true;
                         break;
-                    }                    
+                    }
                 }
                 if (found) {
                     break;
@@ -129,11 +173,11 @@ public class Solver {
 //        for (Node node : tempNodeList) {
 //            pq.insert(node);
 //        }
-        System.out.println("minNode board=" + minNode.Board.toString());
-        System.out.format("manhattan:%d hamming:%d \n", minNode.Board.manhattan(), minNode.Board.hamming());
+//        System.out.println("minNode board=" + minNode.Board.toString());
+//        System.out.format("manhattan:%d hamming:%d \n", minNode.Board.manhattan(), minNode.Board.hamming());
         //newState = minNode.Board;        
         //insertNeighbsInPQ(newState, minNode);
-        insertNeighbsInPQ(minNode);
+        insertNeighbsInPQ(minNode, isTwin);
     }
 
     // is the initial board solvable?
@@ -143,6 +187,9 @@ public class Solver {
 
     // min number of moves to solve initial board; -1 if no solution
     public int moves() {
+        if (isTwinSolvable) {
+            return -1;
+        }
         if (foundSolution && solutionResult.size() == 0) {
             return 0;
         }
@@ -183,7 +230,7 @@ public class Solver {
         //Solver solver = new Solver(initial.twin());
         // solve the puzzle
         Solver solver = new Solver(initial);
-
+        
         // print solution to standard output
         if (!solver.isSolvable()) {
             StdOut.println("No solution possible");
