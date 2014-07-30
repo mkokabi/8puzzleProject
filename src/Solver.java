@@ -66,12 +66,12 @@ public class Solver {
     public Solver(Board initial) {
         this(initial, false, null);
     }
-    
+
     private TestThread feasibleTestThread;
     private Solver mainSolver;
 
     private Solver(Board initial, boolean isTwin, Solver mainSolver) {
-        //System.out.println("--Solving--");
+//        System.out.println("--Solving--");
         Node initialNode = new Node(null, initial, 0);
         if (!isTwin) {
             Board twinBoard = initialNode.Board.twin();
@@ -80,10 +80,8 @@ public class Solver {
         } else {
             this.mainSolver = mainSolver;
         }
-        //pq.insert(initialNode);
         Board newState = initial;
         if (!newState.isGoal()) {
-            //insertNeighbsInPQ(newState, initialNode);
             insertNeighbsInPQ(initialNode, isTwin);
             if (foundSolution) {
                 return;
@@ -97,7 +95,6 @@ public class Solver {
     private Stack<Board> solutionResult;
     private boolean foundSolution = false;
 
-//    private void insertNeighbsInPQ(Board newState, Node prevNode) {
     private void insertNeighbsInPQ(Node curNode, boolean isTwin) {
         if (!isTwin && isTwinSolvable) {
             return;
@@ -105,31 +102,22 @@ public class Solver {
         if (isTwin && mainSolver.foundSolution) {
             return;
         }
-        //pq = pq = new MinPQ<Node>(MinPQComparator);
         m++;
 //        System.out.format("--------------moves:%d \n", m);
-//        //System.out.println("from \n" + prevNode.Board.toString());
 //        System.out.println("from \n" + curNode.Board.toString());
         int n = 0;
-        //for (Board neighBoard : newState.neighbors()) {
-        //Node minNode = pq.isEmpty() ? curNode : pq.min();
         Node minNode = curNode;
-        int priority = minNode.Moves + minNode.Board.manhattan();
-        Queue<Node> tempNodeList = new Queue<>();
-        while (true) {
             for (Board neighBoard : minNode.Board.neighbors()) {
-                //for (Board neighBoard : curNode.Board.neighbors()) {
 //                System.out.println("n:" + n++);
 //                System.out.print(neighBoard.toString());
 //                System.out.format("manhattan:%d hamming:%d \n", neighBoard.manhattan(), neighBoard.hamming());
                 if (foundSolution) {
                     return;
                 }
-                if (neighBoard.isGoal()) {                    
+                if (neighBoard.isGoal()) {
                     foundSolution = true;
                     solutionResult = new Stack<>();
                     solutionResult.push(neighBoard);
-                    //Node pn = prevNode;
                     Node pn = minNode;
                     while (pn != null) {
                         solutionResult.push(pn.Board);
@@ -138,45 +126,15 @@ public class Solver {
                     return;
                 }
                 if (minNode.PrevNode != null && neighBoard.equals(minNode.PrevNode.Board)) {
-                    //if (prevNode.PrevNode != null && neighBoard.equals(prevNode.PrevNode.Board)) {
 //                    System.out.format("return, moves:%d\n", m);
                     continue;
                 }
-                final Node newNode = new Node(minNode, neighBoard, m);
+                final Node newNode = new Node(minNode, neighBoard, minNode.Moves + 1);
                 pq.insert(newNode);
-                tempNodeList.enqueue(newNode);
-//            if (neighBoard.hamming() >= prevNode.Board.hamming()
-//                    && neighBoard.manhattan() >= prevNode.Board.manhattan()) {
-//                System.out.format("continue\n", m);
-//                continue;
-//            }
             }
-            if (!pq.isEmpty()) {
-                minNode = pq.delMin();
-                if (minNode.Moves + minNode.Board.manhattan() > priority) {
-                    break;
-                }
-                boolean found = false;
-                for (Node node : tempNodeList) {
-                    if (node.equals(minNode)) {
-                        found = true;
-                        break;
-                    }
-                }
-                if (found) {
-                    break;
-                }
-            } else {
-                break;
-            }
-        }
-//        for (Node node : tempNodeList) {
-//            pq.insert(node);
-//        }
+            minNode = pq.delMin();
 //        System.out.println("minNode board=" + minNode.Board.toString());
-//        System.out.format("manhattan:%d hamming:%d \n", minNode.Board.manhattan(), minNode.Board.hamming());
-        //newState = minNode.Board;        
-        //insertNeighbsInPQ(newState, minNode);
+//        System.out.format("manhattan:%d hamming:%d moves:%d\n", minNode.Board.manhattan(), minNode.Board.hamming(), minNode.Moves);
         insertNeighbsInPQ(minNode, isTwin);
     }
 
@@ -230,7 +188,7 @@ public class Solver {
         //Solver solver = new Solver(initial.twin());
         // solve the puzzle
         Solver solver = new Solver(initial);
-        
+
         // print solution to standard output
         if (!solver.isSolvable()) {
             StdOut.println("No solution possible");
