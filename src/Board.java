@@ -12,22 +12,7 @@ import java.util.Iterator;
  */
 public class Board {
 
-    private class block {
-
-        public int row, col;
-
-        public block(int row, int col) {
-            this.row = row;
-            this.col = col;
-        }
-
-        public String toString() {
-            return String.format("row:%d, col:%d", this.row, this.col);
-        }
-    }
-
     private int[][] blocks;
-    private block[] goal;
     private int N;
     private int emptyRow;
     private int emptyCol;
@@ -37,23 +22,15 @@ public class Board {
     public Board(int[][] blocks) {
         N = blocks.length;
         this.blocks = new int[N][N];
-        this.goal = new block[N * N + 1];
-        this.goal[0] = new block(N - 1, N - 1);
-        int k = 0;
         for (int i = 0; i < N; i++) {
             for (int j = 0; j < N; j++) {
                 this.blocks[i][j] = blocks[i][j];
-                this.goal[++k] = new block(i, j);
                 if (blocks[i][j] == 0) {
                     emptyRow = i;
                     emptyCol = j;
                 }
             }
         }
-    }
-
-    private int pos(int i, int j) {
-        return ((i - 1) * N) + (j - 1);
     }
 
     // board dimension N
@@ -78,8 +55,17 @@ public class Board {
     }
 
     private int distance(int curValue, int curRow, int curCol) {
-        return Math.abs(goal[curValue].row - curRow)
-                + Math.abs(goal[curValue].col - curCol);
+        int goalRow = 0;
+        int goalCol = 0;
+        if (curValue == 0) {
+            goalRow = N - 1;
+            goalCol = N - 1;
+        } else {
+            goalRow = (curValue - 1) / N;
+            goalCol = (curValue - 1) % N;
+        }
+        return Math.abs(goalRow - curRow)
+                + Math.abs(goalCol - curCol);
     }
 
     // sum of Manhattan distances between blocks and goal
@@ -98,7 +84,17 @@ public class Board {
 
     // is this board the goal board?
     public boolean isGoal() {
-        return hamming() == 0;
+        for (int i = 0; i < N; i++) {
+            for (int j = 0; j < N; j++) {
+                if (blocks[i][j] == 0) {
+                    continue;
+                }
+                if (distance(blocks[i][j], i, j) != 0) {
+                    return false;
+                }
+            }
+        }
+        return true;
     }
 
     // a board obtained by exchanging two adjacent blocks in the same row
